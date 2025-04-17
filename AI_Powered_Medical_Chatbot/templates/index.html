@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Diagnostic Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom CSS cho giao diện hiện đại */
+        body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #111827 100%);
+            font-family: 'Inter', sans-serif;
+        }
+        .chat-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .sidebar-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .sidebar-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        .chat-message {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #2dd4bf;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+        }
+        .btn-modern {
+            background: linear-gradient(90deg, #2dd4bf, #3b82f6);
+            transition: all 0.3s ease;
+        }
+        .btn-modern:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(45, 212, 191, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-200">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center justify-center mb-10 chat-container p-6">
+            <i class="fas fa-stethoscope text-5xl text-teal-400 mr-4"></i>
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold text-teal-300">AI Medical Chatbot</h1>
+                <p class="text-gray-400 text-lg">Your Intelligent Health Companion</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Sidebar -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Upload Image Card -->
+                <div class="sidebar-card p-6">
+                    <h2 class="text-xl font-semibold text-teal-400 mb-4 flex items-center">
+                        <i class="fas fa-camera mr-2"></i> Upload Medical Image
+                    </h2>
+                    <button id="upload-btn" class="btn-modern w-full py-3 text-white font-bold rounded-lg flex items-center justify-center">
+                        <i class="fas fa-upload mr-2"></i> Choose Image
+                    </button>
+                    <input type="file" id="image-upload" accept="image/*" class="hidden" />
+                    <div id="image-container" class="hidden mt-4 relative">
+                        <img id="display-image" src="" alt="Uploaded image" class="w-full rounded-lg shadow-lg" />
+                        <button id="remove-image" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-all">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Questions -->
+                <div class="sidebar-card p-6">
+                    <h2 class="text-xl font-semibold text-teal-400 mb-4 flex items-center">
+                        <i class="fas fa-question-circle mr-2"></i> Quick Actions
+                    </h2>
+                    <div class="space-y-3">
+                        <button class="quick-question w-full bg-teal-900 hover:bg-teal-800 text-white py-2 px-4 rounded-lg text-left transition-all">
+                            Analyze this image
+                        </button>
+                        <button class="quick-question w-full bg-teal-900 hover:bg-teal-800 text-white py-2 px-4 rounded-lg text-left transition-all">
+                            Explain my symptoms
+                        </button>
+                        <button class="quick-question w-full bg-teal-900 hover:bg-teal-800 text-white py-2 px-4 rounded-lg text-left transition-all">
+                            Is this urgent?
+                        </button>
+                        <button class="quick-question w-full bg-teal-900 hover:bg-teal-800 text-white py-2 px-4 rounded-lg text-left transition-all">
+                            Next steps?
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chat Area -->
+            <div class="lg:col-span-2">
+                <div class="chat-container flex flex-col h-[650px]">
+                    <!-- Chat Header -->
+                    <div class="p-4 border-b border-white/10 flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        <h2 class="text-xl font-semibold text-teal-400">Live Consultation</h2>
+                        <div class="ml-auto flex space-x-2">
+                            <button id="clear-chat" class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-md transition-all">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="flex-grow p-6 overflow-y-auto flex flex-col space-y-4">
+                        <div class="flex items-start chat-message">
+                            <div class="bg-teal-600 w-10 h-10 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fas fa-robot text-white"></i>
+                            </div>
+                            <div class="bg-gray-800/80 p-4 rounded-lg max-w-[80%] shadow-md">
+                                <p class="text-justify">Hello! I’m Dr. AI, your virtual medical assistant with over 10 years of experience. I’m here to help with your medical queries. Upload an image (optional) and describe your symptoms or questions—I’ll provide a detailed response.</p>
+                                <p class="text-xs text-gray-500 mt-2">Note: This is not a substitute for professional medical advice.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="p-4 border-t border-white/10">
+                        <div class="flex items-center">
+                            <textarea id="query-input" rows="2" placeholder="Describe your symptoms or ask a question..."
+                                class="w-full p-3 bg-gray-800/50 text-gray-200 rounded-lg shadow resize-none transition-all border border-gray-700"></textarea>
+                            <button id="submit-query" class="ml-3 btn-modern text-white p-3 rounded-lg flex-shrink-0">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="error-container" class="hidden mt-4 p-4 bg-red-500/80 text-white rounded-lg shadow-lg">
+                    <p id="error-text" class="flex items-center"><i class="fas fa-exclamation-triangle mr-2"></i> <span></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="mt-8 text-center text-gray-400 text-sm">
+            <p>This AI tool is for informational purposes only and does not provide medical advice, diagnosis, or treatment.</p>
+            <p>Always consult a qualified healthcare provider for medical concerns.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadBtn = document.getElementById('upload-btn');
+            const imageUpload = document.getElementById('image-upload');
+            const displayImage = document.getElementById('display-image');
+            const imageContainer = document.getElementById('image-container');
+            const removeImageBtn = document.getElementById('remove-image');
+            const queryInput = document.getElementById('query-input');
+            const submitQuery = document.getElementById('submit-query');
+            const chatMessages = document.getElementById('chat-messages');
+            const errorContainer = document.getElementById('error-container');
+            const errorText = document.getElementById('error-text').querySelector('span');
+            const clearChatBtn = document.getElementById('clear-chat');
+            const quickQuestions = document.querySelectorAll('.quick-question');
+
+            let currentImage = null;
+            const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+
+            uploadBtn.addEventListener('click', () => imageUpload.click());
+
+            imageUpload.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        displayImage.src = e.target.result;
+                        imageContainer.classList.remove('hidden');
+                        currentImage = file;
+                        addMessage('system', `Image "${file.name}" uploaded successfully. How can I assist you?`);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            removeImageBtn.addEventListener('click', () => {
+                imageContainer.classList.add('hidden');
+                imageUpload.value = '';
+                currentImage = null;
+                addMessage('system', 'Image removed. Upload another or proceed with your question.');
+            });
+
+            quickQuestions.forEach(button => {
+                button.addEventListener('click', () => {
+                    queryInput.value = button.textContent.trim();
+                    submitQuery.click();
+                });
+            });
+
+            submitQuery.addEventListener('click', async () => {
+                const query = queryInput.value.trim();
+                if (!query) {
+                    showError('Please enter a question or describe your symptoms.');
+                    return;
+                }
+
+                addMessage('user', query);
+                queryInput.value = '';
+
+                const formData = new FormData();
+                formData.append('query', query);
+                formData.append('session_id', sessionId);
+                if (currentImage) {
+                    formData.append('image', currentImage);
+                }
+
+                try {
+                    submitQuery.disabled = true;
+                    submitQuery.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                    const response = await fetch('/diagnose', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.detail || 'An error occurred while processing your request.');
+                    }
+
+                    if (result["diagnosis"]) {
+                        addMessage('ai', result["diagnosis"]);
+                    } else {
+                        throw new Error('No diagnosis received from AI.');
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError(error.message);
+                } finally {
+                    submitQuery.disabled = false;
+                    submitQuery.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                }
+            });
+
+            queryInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    submitQuery.click();
+                }
+            });
+
+            clearChatBtn.addEventListener('click', () => {
+                while (chatMessages.children.length > 1) {
+                    chatMessages.removeChild(chatMessages.lastChild);
+                }
+            });
+
+            function addMessage(sender, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'flex items-start chat-message';
+
+                let avatarIcon, messageBg;
+                if (sender === 'user') {
+                    avatarIcon = 'fas fa-user';
+                    messageBg = 'bg-teal-900/80';
+                    messageDiv.className = 'flex items-start chat-message flex-row-reverse';
+                } else if (sender === 'ai') {
+                    avatarIcon = 'fas fa-robot';
+                    messageBg = 'bg-gray-800/80';
+                } else {
+                    avatarIcon = 'fas fa-info-circle';
+                    messageBg = 'bg-teal-900/50';
+                }
+
+                messageDiv.innerHTML = `
+                    <div class="bg-teal-600 w-10 h-10 rounded-full flex items-center justify-center ${sender === 'user' ? 'ml-3' : 'mr-3'} flex-shrink-0">
+                        <i class="${avatarIcon} text-white"></i>
+                    </div>
+                    <div class="${messageBg} p-4 rounded-lg max-w-[80%] shadow-md prose prose-invert text-justify">
+                        ${marked.parse(content)}
+                    </div>
+                `;
+
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                errorContainer.classList.add('hidden');
+            }
+
+            function showError(message) {
+                errorText.textContent = message;
+                errorContainer.classList.remove('hidden');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
